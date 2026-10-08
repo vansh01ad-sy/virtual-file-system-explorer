@@ -52,7 +52,7 @@ int main(){
         printf("Memory allocation failed\n");
         return 1;
     }
-    strcpy("College ", newNode->name);
+    strcpy(newNode->name, "College");
     newNode->type = FOLDER;
     newNode->firstChild = NULL;
     newNode->nextSibling=NULL;
