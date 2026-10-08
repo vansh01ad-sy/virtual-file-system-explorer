@@ -2,15 +2,31 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define FOLDER 0        // node type value is 0 it is a folder
-#define FILE_TYPE 1     // if it is one it is a file
+#define FOLDER 0        
+#define FILE_TYPE 1     
 
-typedef struct Node {   // for file system a node contain name and type 
+
+typedef struct Node {   
     char name[50];
     int type;
     struct Node *firstChild;
     struct Node *nextSibling;
 }Node;
+
+Node *createNode(char *name , int type){
+    Node *newNode = malloc(sizeof(Node));
+    if (newNode == NULL){
+        printf("Memory allocation failed\n");
+        return NULL; 
+    }
+    strcpy(newNode->name, name);
+    newNode->type = type;
+    newNode->firstChild = NULL;
+    newNode->nextSibling = NULL;
+
+    return newNode;
+}
+
 
 int main(){
     Node root; 
@@ -46,21 +62,11 @@ int main(){
         current = current->nextSibling;
     }
 
-    Node *newNode = malloc(sizeof(Node));
+    Node *college = createNode("college",FOLDER);
+    printf("Name: %s\n", college->name);
+    printf("Type: %d\n", college->type);
 
-    if(newNode == NULL){
-        printf("Memory allocation failed\n");
-        return 1;
-    }
-    strcpy(newNode->name, "College");
-    newNode->type = FOLDER;
-    newNode->firstChild = NULL;
-    newNode->nextSibling=NULL;
-
-    printf("Name: %s\n", newNode->name);
-    printf("Type: %d\n", newNode->type);
-
-    free(newNode);
+    free(college);
 
 return 0;    
 }
