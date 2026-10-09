@@ -42,21 +42,83 @@ void addChild (Node *parent , Node *child) {
 
 int main(){
     Node *root = createNode("/", FOLDER);
-    Node *document = createNode("Documents", FOLDER);
-
-    addChild(root , document);
-
-    Node *current = root->firstChild;
-    
-    
-    Node *downloads = createNode("Downloads", FOLDER);
-    addChild(root, downloads);
-
-    while(current != NULL){
-        printf("%s\n", current->name);
-        current = current->nextSibling;
+    if(root == NULL){
+        printf("Unable to create root folder!");
+        return 1;
     }
+    int choice ; 
+    char name[50];
 
+    while(1){
+        printf("\t\t\tSelect choice\n");
+        printf("1.Create Folder\n");
+        printf("2.list Content\n");
+        printf("3.Create a file\n");
+        printf("4.Exit\n");
+        printf("Enter you choice: ");
+        scanf("%d", &choice);
+        getchar();
 
-return 0;    
+        switch(choice){
+            case 1: 
+            {   
+                printf("Enter name of the folder: " );
+                fgets(name,sizeof(name), stdin);
+                name[strcspn(name , "\n")] = '\0';
+
+                Node *folder = createNode(name , FOLDER) ;
+
+                if (folder==NULL){
+                    printf("failed to create a folder");
+                    break;
+                }
+                addChild(root, folder);
+                printf("folder created succesfully\n");
+                break;
+            }
+            case 2:
+            {
+                Node *current = root->firstChild;
+
+                if (current == NULL){
+                    printf("No folders exist yet\n");
+                }
+                printf("Current folders are:\n");
+                while(current != NULL){
+                    if(current->type == FOLDER){
+                        printf("[DIR] %s/\n", current->name);
+                    }
+                    else{
+                        printf("[FILE] %s\n", current->name);
+                    }
+                    current = current->nextSibling;
+                }
+
+                break;
+            }
+            case 3: {
+                printf("Enter name of the file: " );
+                fgets(name,sizeof(name), stdin);
+                name[strcspn(name , "\n")] = '\0';
+
+                Node *folder = createNode(name , FILE_TYPE) ;
+
+                if (folder==NULL){
+                    printf("failed to create a file");
+                    break;
+                }
+                addChild(root, folder);
+                printf("file created succesfully\n");
+                break;
+            }
+            case 4:{
+                printf("Exiting the file system.....\n");
+                return 0;
+            }
+
+            default :
+                printf("invalid choice");
+        }
+
+    }
 }
