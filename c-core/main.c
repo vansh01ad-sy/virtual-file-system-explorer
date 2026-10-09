@@ -14,59 +14,49 @@ typedef struct Node {
 }Node;
 
 Node *createNode(char *name , int type){
-    Node *newNode = malloc(sizeof(Node));
+    Node *newNode = (Node*)malloc(sizeof(Node));
     if (newNode == NULL){
         printf("Memory allocation failed\n");
         return NULL; 
     }
     strcpy(newNode->name, name);
     newNode->type = type;
-    newNode->firstChild = NULL;
+    newNode->firstChild = NULL;             //initially set both null cause node has no child or sibling when created ;
     newNode->nextSibling = NULL;
 
     return newNode;
 }
 
+void addChild (Node *parent , Node *child) {
+    if(parent->firstChild == NULL){
+        parent->firstChild = child;
+        return;
+    }
+    Node *current = parent->firstChild;
+    while(current->nextSibling!= NULL){
+        current = current->nextSibling;
+    }
+    current->nextSibling = child;
+}
+
 
 int main(){
-    Node root; 
-    strcpy(root.name , "/");
-    root.type = FOLDER;
+    Node *root = createNode("/", FOLDER);
+    Node *document = createNode("Documents", FOLDER);
+
+    addChild(root , document);
+
+    Node *current = root->firstChild;
     
-    Node documents;
-    strcpy(documents.name , "Documents");
-    documents.type = FOLDER;
+    
+    Node *downloads = createNode("Downloads", FOLDER);
+    addChild(root, downloads);
 
-    Node downloads;
-    strcpy(downloads.name , "Downloads");
-    downloads.type = FOLDER;
-
-    Node project;
-    strcpy(project.name , "Project");
-    project.type = FOLDER;
-    root.firstChild = &documents;
-
-    documents.nextSibling = &downloads;
-    downloads.nextSibling = &project;
-    project.nextSibling = NULL;
-
-    root.nextSibling = NULL;
-
-    downloads.firstChild = NULL;
-    documents.firstChild = NULL;
-    project.firstChild = NULL;
-
-    Node *current = root.firstChild;
     while(current != NULL){
-        printf("child: %s\n", current->name);
+        printf("%s\n", current->name);
         current = current->nextSibling;
     }
 
-    Node *college = createNode("college",FOLDER);
-    printf("Name: %s\n", college->name);
-    printf("Type: %d\n", college->type);
-
-    free(college);
 
 return 0;    
 }
