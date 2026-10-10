@@ -49,6 +49,7 @@ int main(){
         printf("Unable to create root folder!");
         return 1;
     }
+    Node *currentFolder = root;   //indicate in which folder we are 
     int choice ; 
     char name[50];
 
@@ -75,13 +76,13 @@ int main(){
                     printf("failed to create a folder");
                     break;
                 }
-                addChild(root, folder);
+                addChild(currentFolder, folder);
                 printf("folder created succesfully\n");
                 break;
             }
             case 2:
             {
-                Node *current = root->firstChild;
+                Node *current = currentFolder->firstChild;
 
                 if (current == NULL){
                     printf("No folders exist yet\n");
@@ -112,7 +113,7 @@ int main(){
                     printf("failed to create a file");
                     break;
                 }
-                addChild(root, folder);
+                addChild(currentFolder, folder);
                 printf("file created succesfully\n");
                 break;
             }
