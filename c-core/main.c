@@ -58,7 +58,9 @@ int main(){
         printf("1.Create Folder\n");
         printf("2.list Content\n");
         printf("3.Create a file\n");
-        printf("4.Exit\n");
+        printf("4.Open Folder\n");
+        printf("5. Go Back\n");
+        printf("6. Exit\n");
         printf("Enter you choice: ");
         scanf("%d", &choice);
         getchar();
@@ -118,6 +120,27 @@ int main(){
                 break;
             }
             case 4:{
+                char name[50];
+                printf("Enter the name of the folder to open");
+                fgets(name , sizeof(name), stdin);
+                name[strcspn(name , "\n")] = '\0';
+
+                Node *current = currentFolder->firstChild;
+
+                while(current != NULL){
+                    if(strcmp(current->name , name)==0 && current->type ==FOLDER){
+                        currentFolder = current;
+                        printf("Folder Opened: %s\n", current->name);
+                        break;
+                    }
+                    current = current->nextSibling;
+                }
+                if (current == NULL){
+                    printf("Folder not found.\n");
+                }
+                break;
+            }
+            case 6:{
                 printf("Exiting the file system.....\n");
                 return 0;
             }
