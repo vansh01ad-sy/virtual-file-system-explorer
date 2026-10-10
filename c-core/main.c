@@ -11,6 +11,7 @@ typedef struct Node {
     int type;
     struct Node *firstChild;
     struct Node *nextSibling;
+    struct Node *parent;
 }Node;
 
 Node *createNode(char *name , int type){
@@ -23,11 +24,13 @@ Node *createNode(char *name , int type){
     newNode->type = type;
     newNode->firstChild = NULL;             //initially set both null cause node has no child or sibling when created ;
     newNode->nextSibling = NULL;
+    newNode->parent = NULL;
 
     return newNode;
 }
 
 void addChild (Node *parent , Node *child) {
+    child->parent = parent;
     if(parent->firstChild == NULL){
         parent->firstChild = child;
         return;
@@ -87,9 +90,11 @@ int main(){
                 while(current != NULL){
                     if(current->type == FOLDER){
                         printf("[DIR] %s/\n", current->name);
+                        printf("parent is %s\n",current->parent->name );
                     }
                     else{
                         printf("[FILE] %s\n", current->name);
+                        printf("parent is %s\n",current->parent->name );
                     }
                     current = current->nextSibling;
                 }
