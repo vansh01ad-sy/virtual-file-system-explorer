@@ -54,11 +54,12 @@ int main(){
     char name[50];
 
     while(1){
+        printf("\n\nCurrent folder:%s\n\n", currentFolder->name);
         printf("\t\t\tSelect choice\n");
-        printf("1.Create Folder\n");
-        printf("2.list Content\n");
-        printf("3.Create a file\n");
-        printf("4.Open Folder\n");
+        printf("1. Create Folder\n");
+        printf("2. List Content\n");
+        printf("3. Create a file\n");
+        printf("4. Open Folder\n");
         printf("5. Go Back\n");
         printf("6. Exit\n");
         printf("Enter you choice: ");
@@ -89,15 +90,15 @@ int main(){
                 if (current == NULL){
                     printf("No folders exist yet\n");
                 }
-                printf("Current folders are:\n");
+                printf("Current content is:\n");
                 while(current != NULL){
                     if(current->type == FOLDER){
                         printf("[DIR] %s/\n", current->name);
-                        printf("parent is %s\n",current->parent->name );
+                       
                     }
                     else{
                         printf("[FILE] %s\n", current->name);
-                        printf("parent is %s\n",current->parent->name );
+                        
                     }
                     current = current->nextSibling;
                 }
@@ -121,7 +122,7 @@ int main(){
             }
             case 4:{
                 char name[50];
-                printf("Enter the name of the folder to open");
+                printf("Enter the name of the folder to open: ");
                 fgets(name , sizeof(name), stdin);
                 name[strcspn(name , "\n")] = '\0';
 
@@ -130,13 +131,24 @@ int main(){
                 while(current != NULL){
                     if(strcmp(current->name , name)==0 && current->type ==FOLDER){
                         currentFolder = current;
-                        printf("Folder Opened: %s\n", current->name);
+                        printf("Folder Opened: %s\n", currentFolder->name);
                         break;
                     }
                     current = current->nextSibling;
                 }
                 if (current == NULL){
                     printf("Folder not found.\n");
+                }
+                break;
+            }
+            case 5 :
+            {
+                if (currentFolder->parent != NULL) {
+                    currentFolder = currentFolder->parent;
+                    printf("Moved back to :%s\n", currentFolder->name);
+                }
+                else {
+                    printf("you are already at the root.\n");
                 }
                 break;
             }
