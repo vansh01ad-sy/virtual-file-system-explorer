@@ -14,6 +14,24 @@ typedef struct Node {
     struct Node *parent;
 }Node;
 
+void printPath(Node *currentFolder){
+    Node *path[100];
+    int depth = 0 ;
+
+    while(currentFolder!= NULL && depth<100){
+        path[depth] = currentFolder;
+        depth++;
+
+        currentFolder = currentFolder->parent;
+    }
+    for (int i = depth - 1 ; i >= 0 ; i--){
+        printf("%s", path[i]->name);
+        if(i > 0 && i < depth-1 ){
+            printf("/");
+        }
+    }
+}
+
 Node *createNode(char *name , int type){
     Node *newNode = (Node*)malloc(sizeof(Node));
     if (newNode == NULL){
@@ -54,8 +72,12 @@ int main(){
     char name[50];
 
     while(1){
-        printf("\n\nCurrent folder:%s\n\n", currentFolder->name);
-        printf("\t\t\tSelect choice\n");
+        printf("\n===== VIRTUAL FILE SYSTEM =====\n");
+        printf("Current path: ");
+        printPath(currentFolder);
+        printf("\n\n");
+        
+        
         printf("1. Create Folder\n");
         printf("2. List Content\n");
         printf("3. Create a file\n");
@@ -90,7 +112,7 @@ int main(){
                 if (current == NULL){
                     printf("No folders exist yet\n");
                 }
-                printf("Current content is:\n");
+                printf("Current folder's content is:\n");
                 while(current != NULL){
                     if(current->type == FOLDER){
                         printf("[DIR] %s/\n", current->name);
