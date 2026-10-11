@@ -118,8 +118,7 @@ char command[100];
 
 while (1)
 {
-    printf("COMMAND> ");
-    fflush(stdout);
+    
 
     if (fgets(command, sizeof(command), stdin) == NULL)
         break;
@@ -128,14 +127,13 @@ while (1)
 
     if (strcmp(command, "EXIT") == 0)
         break;
-
     if (strcmp(command, "PATH") == 0)
-    {
-        printf("PATH|");
-        printPath(currentFolder);
-        printf("\n");
-        fflush(stdout);
-    }
+{
+    printf("PATH|");
+    printPath(currentFolder);
+    printf("\nEND\n");
+    fflush(stdout);
+}
     else if (strcmp(command, "LIST") == 0)
     {
         Node *current = currentFolder->firstChild;
@@ -170,6 +168,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
         {
             addChild(currentFolder, folder);
             printf("OK|Folder created|%s\n", name);
+            printf("END\n");
         }
     }
 
@@ -195,6 +194,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
                 {
                     addChild(currentFolder, file);
                     printf("OK|File created|%s\n", name);
+                    printf("END\n");
                 }
             }
 
@@ -216,6 +216,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
 
                     currentFolder = current;
                     printf("OK|Folder opened|%s\n", currentFolder->name);
+                    printf("END\n");
                     break;
                 }
 
@@ -224,7 +225,8 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
 
             if (current == NULL)
                 printf("ERROR|Folder not found\n");
-
+                
+                printf("END\n");
             fflush(stdout);
         }
         else if (strcmp(command, "BACK") == 0)
@@ -234,12 +236,13 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
                 historyIndex--;
                 currentFolder = history[historyIndex];
                 printf("OK|Moved back\n");
+                printf("END\n");
             }
             else
             {
                 printf("ERROR|No previous location\n");
             }
-
+            printf("END\n");
             fflush(stdout);
         }
         else if (strcmp(command, "FORWARD") == 0)
@@ -249,12 +252,13 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
                 historyIndex++;
                 currentFolder = history[historyIndex];
                 printf("OK|Moved forward\n");
+                printf("END\n");
             }
             else
             {
                 printf("ERROR|No forward location\n");
             }
-
+            printf("END\n");
             fflush(stdout);
         }
 
