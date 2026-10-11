@@ -5,6 +5,7 @@
 #define FOLDER 0        
 #define FILE_TYPE 1     
 
+#define HISTORY_LIMIT 100
 
 typedef struct Node {   
     char name[50];
@@ -13,6 +14,33 @@ typedef struct Node {
     struct Node *nextSibling;
     struct Node *parent;
 }Node;
+
+
+
+
+void recordVisit(Node *history[], int *count,
+                 int *index, Node *folder)
+{
+    /* Remove the forward history after the current position */
+    *count = *index + 1;
+
+    /* If history is full, discard the oldest entry */
+    if(*count == HISTORY_LIMIT)
+    {
+        for(int i = 1; i < HISTORY_LIMIT; i++)
+        {
+            history[i - 1] = history[i];
+        }
+
+        *count = HISTORY_LIMIT - 1;
+        (*index)--;
+    }
+
+    /* Record the new location */
+    history[*count] = folder;
+    *index = *count;
+    (*count)++;
+}
 
 void printPath(Node *currentFolder){
     Node *path[100];
@@ -71,6 +99,14 @@ int main(){
     int choice ; 
     char name[50];
 
+   
+
+    Node *history[HISTORY_LIMIT];
+    int historyCount = 1;
+    int historyIndex = 0;
+
+history[0] = root;
+
     while(1){
         printf("\n===== VIRTUAL FILE SYSTEM =====\n");
         printf("Current path: ");
@@ -83,7 +119,8 @@ int main(){
         printf("3. Create a file\n");
         printf("4. Open Folder\n");
         printf("5. Go Back\n");
-        printf("6. Exit\n");
+        printf("6. Go Forward\n");
+        printf("7. Exit\n");
         printf("Enter you choice: ");
         scanf("%d", &choice);
         getchar();
@@ -152,6 +189,8 @@ int main(){
 
                 while(current != NULL){
                     if(strcmp(current->name , name)==0 && current->type ==FOLDER){
+                        recordVisit(history, &historyCount,
+                        &historyIndex, current);
                         currentFolder = current;
                         printf("Folder Opened: %s\n", currentFolder->name);
                         break;
@@ -165,16 +204,44 @@ int main(){
             }
             case 5 :
             {
-                if (currentFolder->parent != NULL) {
-                    currentFolder = currentFolder->parent;
-                    printf("Moved back to :%s\n", currentFolder->name);
+               
+            
+            
+                if(historyIndex > 0)
+                    {
+                    historyIndex--;
+                    currentFolder = history[historyIndex];
+
+                    printf("Moved back successfully.\n");
+                        }
+                    else
+                    {
+                        printf("No previous location.\n");
+                    }
+
+                    break;
+                    }
+            
+            case 6: {
+            
+
+                    if(historyIndex < historyCount - 1)
+                    {
+                        historyIndex++;
+                        currentFolder = history[historyIndex];
+
+                        printf("Moved forward successfully.\n");
+                    }
+                    else
+                    {
+                        printf("No forward location.\n");
+                    }
+
+                    break;
                 }
-                else {
-                    printf("you are already at the root.\n");
-                }
-                break;
-            }
-            case 6:{
+
+            
+            case 7:{
                 printf("Exiting the file system.....\n");
                 return 0;
             }
