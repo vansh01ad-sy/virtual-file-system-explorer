@@ -42,23 +42,29 @@ void recordVisit(Node *history[], int *count,
     (*count)++;
 }
 
-void printPath(Node *currentFolder){
+
+void printPath(Node *currentFolder)
+{
     Node *path[100];
-    int depth = 0 ;
+    int depth = 0;
 
-    while(currentFolder!= NULL && depth<100){
-        path[depth] = currentFolder;
+    Node *temp = currentFolder;
+
+    while (temp != NULL && depth < 100) {
+        path[depth] = temp;
         depth++;
-
-        currentFolder = currentFolder->parent;
+        temp = temp->parent;
     }
-    for (int i = depth - 1 ; i >= 0 ; i--){
+
+    for (int i = depth - 1; i >= 0; i--) {
         printf("%s", path[i]->name);
-        if(i > 0 && i < depth-1 ){
+
+        if (i > 0 && i < depth-1) {
             printf("/");
         }
     }
 }
+
 
 Node *createNode(char *name , int type){
     Node *newNode = (Node*)malloc(sizeof(Node));
@@ -105,150 +111,159 @@ int main(){
     int historyCount = 1;
     int historyIndex = 0;
 
-history[0] = root;
+    history[0] = root;
 
-    while(1){
-        printf("\n===== VIRTUAL FILE SYSTEM =====\n");
-        printf("Current path: ");
+    
+char command[100];
+
+while (1)
+{
+    printf("COMMAND> ");
+    fflush(stdout);
+
+    if (fgets(command, sizeof(command), stdin) == NULL)
+        break;
+
+    command[strcspn(command, "\n")] = '\0';
+
+    if (strcmp(command, "EXIT") == 0)
+        break;
+
+    if (strcmp(command, "PATH") == 0)
+    {
+        printf("PATH|");
         printPath(currentFolder);
-        printf("\n\n");
-        
-        
-        printf("1. Create Folder\n");
-        printf("2. List Content\n");
-        printf("3. Create a file\n");
-        printf("4. Open Folder\n");
-        printf("5. Go Back\n");
-        printf("6. Go Forward\n");
-        printf("7. Exit\n");
-        printf("Enter you choice: ");
-        scanf("%d", &choice);
-        getchar();
+        printf("\n");
+        fflush(stdout);
+    }
+    else if (strcmp(command, "LIST") == 0)
+    {
+        Node *current = currentFolder->firstChild;
 
-        switch(choice){
-            case 1: 
-            {   
-                printf("Enter name of the folder: " );
-                fgets(name,sizeof(name), stdin);
-                name[strcspn(name , "\n")] = '\0';
-
-                Node *folder = createNode(name , FOLDER) ;
-
-                if (folder==NULL){
-                    printf("failed to create a folder");
-                    break;
-                }
-                addChild(currentFolder, folder);
-                printf("folder created succesfully\n");
-                break;
-            }
-            case 2:
-            {
-                Node *current = currentFolder->firstChild;
-
-                if (current == NULL){
-                    printf("No folders exist yet\n");
-                }
-                printf("Current folder's content is:\n");
-                while(current != NULL){
-                    if(current->type == FOLDER){
-                        printf("[DIR] %s/\n", current->name);
-                       
-                    }
-                    else{
-                        printf("[FILE] %s\n", current->name);
-                        
-                    }
-                    current = current->nextSibling;
-                }
-
-                break;
-            }
-            case 3: {
-                printf("Enter name of the file: " );
-                fgets(name,sizeof(name), stdin);
-                name[strcspn(name , "\n")] = '\0';
-
-                Node *folder = createNode(name , FILE_TYPE) ;
-
-                if (folder==NULL){
-                    printf("failed to create a file");
-                    break;
-                }
-                addChild(currentFolder, folder);
-                printf("file created succesfully\n");
-                break;
-            }
-            case 4:{
-                char name[50];
-                printf("Enter the name of the folder to open: ");
-                fgets(name , sizeof(name), stdin);
-                name[strcspn(name , "\n")] = '\0';
-
-                Node *current = currentFolder->firstChild;
-
-                while(current != NULL){
-                    if(strcmp(current->name , name)==0 && current->type ==FOLDER){
-                        recordVisit(history, &historyCount,
-                        &historyIndex, current);
-                        currentFolder = current;
-                        printf("Folder Opened: %s\n", currentFolder->name);
-                        break;
-                    }
-                    current = current->nextSibling;
-                }
-                if (current == NULL){
-                    printf("Folder not found.\n");
-                }
-                break;
-            }
-            case 5 :
-            {
-               
-            
-            
-                if(historyIndex > 0)
-                    {
-                    historyIndex--;
-                    currentFolder = history[historyIndex];
-
-                    printf("Moved back successfully.\n");
-                        }
-                    else
-                    {
-                        printf("No previous location.\n");
-                    }
-
-                    break;
-                    }
-            
-            case 6: {
-            
-
-                    if(historyIndex < historyCount - 1)
-                    {
-                        historyIndex++;
-                        currentFolder = history[historyIndex];
-
-                        printf("Moved forward successfully.\n");
-                    }
-                    else
-                    {
-                        printf("No forward location.\n");
-                    }
-
-                    break;
-                }
-
-            
-            case 7:{
-                printf("Exiting the file system.....\n");
-                return 0;
-            }
-
-            default :
-                printf("invalid choice");
+        while (current != NULL)
+        {
+            printf("ITEM|%s|%d\n", current->name, current->type);
+            current = current->nextSibling;
         }
 
+        printf("LIST_END\n");
+        fflush(stdout);
     }
+    
+else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
+{
+    char *name = command + 14;
+
+    if (*name == '\0')
+    {
+        printf("ERROR|Folder name required\n");
+    }
+    else
+    {
+        Node *folder = createNode(name, FOLDER);
+
+        if (folder == NULL)
+        {
+            printf("ERROR|Memory allocation failed\n");
+        }
+        else
+        {
+            addChild(currentFolder, folder);
+            printf("OK|Folder created|%s\n", name);
+        }
+    }
+
+    fflush(stdout);
+}
+        else if (strncmp(command, "CREATE_FILE|", 12) == 0)
+        {
+            char *name = command + 12;
+
+            if (*name == '\0')
+            {
+                printf("ERROR|File name required\n");
+            }
+            else
+            {
+                Node *file = createNode(name, FILE_TYPE);
+
+                if (file == NULL)
+                {
+                    printf("ERROR|Memory allocation failed\n");
+                }
+                else
+                {
+                    addChild(currentFolder, file);
+                    printf("OK|File created|%s\n", name);
+                }
+            }
+
+            fflush(stdout);
+        }
+        
+        else if (strncmp(command, "OPEN_FOLDER|", 12) == 0)
+        {
+            char *name = command + 12;
+            Node *current = currentFolder->firstChild;
+
+            while (current != NULL)
+            {
+                if (strcmp(current->name, name) == 0 &&
+                    current->type == FOLDER)
+                {
+                    recordVisit(history, &historyCount,
+                                &historyIndex, current);
+
+                    currentFolder = current;
+                    printf("OK|Folder opened|%s\n", currentFolder->name);
+                    break;
+                }
+
+                current = current->nextSibling;
+            }
+
+            if (current == NULL)
+                printf("ERROR|Folder not found\n");
+
+            fflush(stdout);
+        }
+        else if (strcmp(command, "BACK") == 0)
+        {
+            if (historyIndex > 0)
+            {
+                historyIndex--;
+                currentFolder = history[historyIndex];
+                printf("OK|Moved back\n");
+            }
+            else
+            {
+                printf("ERROR|No previous location\n");
+            }
+
+            fflush(stdout);
+        }
+        else if (strcmp(command, "FORWARD") == 0)
+        {
+            if (historyIndex < historyCount - 1)
+            {
+                historyIndex++;
+                currentFolder = history[historyIndex];
+                printf("OK|Moved forward\n");
+            }
+            else
+            {
+                printf("ERROR|No forward location\n");
+            }
+
+            fflush(stdout);
+        }
+
+        else
+        {
+            printf("ERROR|Unknown command\n");
+            fflush(stdout);
+        }
+
+}
+return 0 ;
 }
