@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NodeVault</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="app">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">N</div>
+                <h1>NodeVault</h1>
+            </div>
+
+            <p class="section-label">WORKSPACE</p>
+
+            <button class="nav-item active" id="homeButton">
+                <span class="nav-icon">⌂</span>
+                <span>Home</span>
+            </button>
+        </aside>
+
+        <!-- Main area -->
+        <main class="main-content">
+
+            <!-- Address bar -->
+            <header class="topbar">
+                <div class="breadcrumbs">
+                    <span class="breadcrumb-home">⌂</span>
+                    <span class="breadcrumb-divider">/</span>
+                    <span id="currentPath">Home</span>
+                </div>
+            </header>
+
+            <div class="content">
+
+                <!-- Actions -->
+                <section class="toolbar">
+                    <div class="toolbar-actions">
+                        <button class="button button-primary" id="newFolderButton">
+                            <span class="button-symbol">+</span>
+                            New Folder
+                        </button>
+
+                        <button class="button button-secondary" id="newFileButton">
+                            <span class="button-symbol">+</span>
+                            New File
+                        </button>
+                    </div>
+
+                    
+                </section>
+
+                <!-- Directory heading -->
+                <section class="directory-heading">
+                    <div>
+                        <h2>All Items</h2>
+                        <p id="itemCount">0 items</p>
+                    </div>
+                </section>
+
+                <!-- Workspace -->
+                <section class="file-area grid-view" id="fileArea">
+                    <div class="empty-state">
+                        <div class="empty-folder">📁</div>
+                        <p>Ready to explore.</p>
+                    </div>
+                </section>
+
+                <!-- Status -->
+                <div class="status-message" id="statusMessage" role="status">
+                    Ready to explore.
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Create dialog -->
+    <dialog id="createDialog" class="create-dialog">
+        <form id="createForm">
+            <div class="dialog-heading">
+                <h2 id="dialogTitle">Create Folder</h2>
+
+                <button
+                    type="button"
+                    class="dialog-close"
+                    id="closeDialogButton"
+                    aria-label="Close dialog"
+                >×</button>
+            </div>
+
+            <label for="itemName">Name</label>
+            <input
+                id="itemName"
+                name="itemName"
+                type="text"
+                maxlength="49"
+                placeholder="Enter a name"
+                required
+                autocomplete="off"
+            >
+
+            <p class="dialog-note">
+                The C backend is not connected yet.
+            </p>
+
+            <div class="dialog-actions">
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    id="cancelButton"
+                >Cancel</button>
+
+                <button type="submit" class="button button-primary">
+                    Continue
+                </button>
+            </div>
+        </form>
+    </dialog>
+</body>
+</html>
