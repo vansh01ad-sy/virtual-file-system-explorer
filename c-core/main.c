@@ -15,7 +15,11 @@ typedef struct Node {
     struct Node *parent;
 }Node;
 
-
+typedef struct RecycleEntry {
+    Node *node;
+    Node *originalParent;
+    struct RecycleEntry *next;
+} RecycleEntry;
 
 
 void recordVisit(Node *history[], int *count,
@@ -94,7 +98,180 @@ void addChild (Node *parent , Node *child) {
     current->nextSibling = child;
 }
 
+Node *findChild(Node *parent, const char *name)
+{
+    Node *current = parent->firstChild;
 
+    while (current != NULL)
+    {
+        if (strcmp(current->name, name) == 0)
+            return current;
+
+        current = current->nextSibling;
+    }
+
+    return NULL;
+}
+
+int detachChild(Node *parent, Node *target)
+{
+    Node *current = parent->firstChild;
+    Node *previous = NULL;
+
+    while (current != NULL)
+    {
+        if (current == target)
+        {
+            if (previous == NULL)
+                parent->firstChild = current->nextSibling;
+            else
+                previous->nextSibling = current->nextSibling;
+
+            current->nextSibling = NULL;
+            current->parent = NULL;
+
+            return 1;
+        }
+
+        previous = current;
+        current = current->nextSibling;
+    }
+
+    return 0;
+}
+
+int recycleNode(RecycleEntry **recycleBin,
+                Node *parent, Node *target)
+{
+    if (target == NULL || target == parent)
+        return 0;
+
+    /* Only recycle files and empty folders for now. */
+    if (target->type == FOLDER && target->firstChild != NULL)
+        return 0;
+    for (RecycleEntry *r = *recycleBin; r != NULL; r = r->next)
+    {
+    if (r->originalParent == target)
+        return 0;
+    }
+    RecycleEntry *entry = malloc(sizeof(RecycleEntry));
+
+    if (entry == NULL)
+        return 0;
+
+    /* Detach only after memory for the entry is available. */
+    if (!detachChild(parent, target))
+    {
+        free(entry);
+        return 0;
+    }
+
+    entry->node = target;
+    entry->originalParent = parent;
+    entry->next = *recycleBin;
+    *recycleBin = entry;
+
+    return 1;
+}
+
+int isInTree(Node *root, Node *target)
+{
+    if (root == NULL)
+        return 0;
+
+    if (root == target)
+        return 1;
+
+    Node *child = root->firstChild;
+
+    while (child != NULL)
+    {
+        if (isInTree(child, target))
+            return 1;
+
+        child = child->nextSibling;
+    }
+
+    return 0;
+}
+int restoreNode(Node *root, RecycleEntry **recycleBin,
+                const char *name)
+{
+    RecycleEntry *current = *recycleBin;
+    RecycleEntry *previous = NULL;
+
+    while (current != NULL)
+    {
+        if (strcmp(current->node->name, name) == 0)
+        {
+            Node *parent = current->originalParent;
+
+            if (!isInTree(root, parent))
+                return 0;
+
+            if (findChild(parent, name) != NULL)
+                return 0;
+
+            if (previous == NULL)
+                *recycleBin = current->next;
+            else
+                previous->next = current->next;
+
+            addChild(parent, current->node);
+            free(current);
+
+            return 1;
+        }
+
+        previous = current;
+        current = current->next;
+    }
+
+    return 0;
+}
+void freeTree(Node *node)
+{
+    if (node == NULL)
+        return;
+
+    Node *child = node->firstChild;
+
+    while (child != NULL)
+    {
+        Node *next = child->nextSibling;
+        freeTree(child);
+        child = next;
+    }
+
+    free(node);
+}
+int permanentlyDelete(RecycleEntry **recycleBin,
+                      const char *name)
+{
+    RecycleEntry *current = *recycleBin;
+    RecycleEntry *previous = NULL;
+
+    while (current != NULL)
+    {
+        if (strcmp(current->node->name, name) == 0)
+        {
+            if (previous == NULL)
+                *recycleBin = current->next;
+            else
+                previous->next = current->next;
+
+            freeTree(current->node);
+            free(current);
+
+            return 1;
+        }
+
+        previous = current;
+        current = current->next;
+    }
+
+    return 0;
+}
 int main(){
     Node *root = createNode("/", FOLDER);
     if(root == NULL){
@@ -112,9 +289,9 @@ int main(){
     int historyIndex = 0;
 
     history[0] = root;
-
+    RecycleEntry *recycleBin = NULL;
     
-char command[100];
+    char command[100];
 
 while (1)
 {
@@ -163,6 +340,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
         if (folder == NULL)
         {
             printf("ERROR|Memory allocation failed\n");
+            printf("END\n");
         }
         else
         {
@@ -181,6 +359,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
             if (*name == '\0')
             {
                 printf("ERROR|File name required\n");
+                printf("END\n");
             }
             else
             {
@@ -201,63 +380,131 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
             fflush(stdout);
         }
         
-        else if (strncmp(command, "OPEN_FOLDER|", 12) == 0)
-        {
-            char *name = command + 12;
-            Node *current = currentFolder->firstChild;
-
-            while (current != NULL)
+        
+            else if (strncmp(command, "OPEN_FOLDER|", 12) == 0)
             {
-                if (strcmp(current->name, name) == 0 &&
-                    current->type == FOLDER)
-                {
-                    recordVisit(history, &historyCount,
-                                &historyIndex, current);
+                char *name = command + 12;
+                Node *current = currentFolder->firstChild;
 
-                    currentFolder = current;
-                    printf("OK|Folder opened|%s\n", currentFolder->name);
-                    printf("END\n");
-                    break;
+                while (current != NULL)
+                {
+                    if (strcmp(current->name, name) == 0 &&
+                        current->type == FOLDER)
+                    {
+                        recordVisit(history, &historyCount,
+                                    &historyIndex, current);
+
+                        currentFolder = current;
+                        printf("OK|Folder opened|%s\n", currentFolder->name);
+                        break;
+                    }
+
+                    current = current->nextSibling;
                 }
 
-                current = current->nextSibling;
+                if (current == NULL)
+                    printf("ERROR|Folder not found\n");
+
+                printf("END\n");
+                fflush(stdout);
             }
 
-            if (current == NULL)
-                printf("ERROR|Folder not found\n");
-                
+        
+            else if (strcmp(command, "BACK") == 0)
+            {
+                if (historyIndex > 0)
+                {
+                    historyIndex--;
+                    currentFolder = history[historyIndex];
+                    printf("OK|Moved back\n");
+                }
+                else
+                {
+                    printf("ERROR|No previous location\n");
+                }
+
                 printf("END\n");
-            fflush(stdout);
-        }
-        else if (strcmp(command, "BACK") == 0)
+                fflush(stdout);
+            }
+
+        
+            else if (strcmp(command, "FORWARD") == 0)
+            {
+                if (historyIndex < historyCount - 1)
+                {
+                    historyIndex++;
+                    currentFolder = history[historyIndex];
+                    printf("OK|Moved forward\n");
+                }
+                else
+                {
+                    printf("ERROR|No forward location\n");
+                }
+
+                printf("END\n");
+                fflush(stdout);
+            }
+            //recyle bin
+            else if (strncmp(command, "DELETE|", 7) == 0)
         {
-            if (historyIndex > 0)
-            {
-                historyIndex--;
-                currentFolder = history[historyIndex];
-                printf("OK|Moved back\n");
-                printf("END\n");
-            }
+        char *name = command + 7;
+        Node *target = findChild(currentFolder, name);
+
+            if (*name == '\0')
+                printf("ERROR|Item name required\n");
+            else if (target == NULL)
+                printf("ERROR|Item not found\n");
+            else if (target->type == FOLDER && target->firstChild != NULL)
+                printf("ERROR|Only empty folders can be recycled\n");
+            else if (recycleNode(&recycleBin, currentFolder, target))
+                printf("OK|Item recycled|%s\n", name);
             else
-            {
-                printf("ERROR|No previous location\n");
-            }
+                printf("ERROR|Unable to recycle item\n");
+
             printf("END\n");
             fflush(stdout);
         }
-        else if (strcmp(command, "FORWARD") == 0)
+        else if (strcmp(command, "RECYCLE_LIST") == 0)
         {
-            if (historyIndex < historyCount - 1)
+            RecycleEntry *current = recycleBin;
+
+            while (current != NULL)
             {
-                historyIndex++;
-                currentFolder = history[historyIndex];
-                printf("OK|Moved forward\n");
-                printf("END\n");
+                printf("ITEM|%s|%d\n",
+                    current->node->name,
+                    current->node->type);
+
+                current = current->next;
             }
+
+            printf("LIST_END\n");
+            fflush(stdout);
+        }
+        else if (strncmp(command, "RESTORE|", 8) == 0)
+        {
+            char *name = command + 8;
+
+            if (*name == '\0')
+                printf("ERROR|Item name required\n");
+            else if (restoreNode(root, &recycleBin, name))
+                printf("OK|Item restored|%s\n", name);
             else
-            {
-                printf("ERROR|No forward location\n");
-            }
+                printf("ERROR|Unable to restore item\n");
+
+            printf("END\n");
+            fflush(stdout);
+        }
+        else if (strncmp(command, "PERMANENT_DELETE|", 17) == 0)
+        {
+            char *name = command + 17;
+
+            if (*name == '\0')
+                printf("ERROR|Item name required\n");
+            else if (permanentlyDelete(&recycleBin, name))
+                printf("OK|Item permanently deleted|%s\n", name);
+            else
+                printf("ERROR|Item not found in Recycle Bin\n");
+
             printf("END\n");
             fflush(stdout);
         }

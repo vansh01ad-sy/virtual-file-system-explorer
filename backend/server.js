@@ -14,7 +14,7 @@ app.use(cors({
         "http://127.0.0.1:5500",
         "http://localhost:5500"
     ]
-}));
+}));                                 
 
 app.use(express.json());
 
@@ -44,21 +44,28 @@ cOutput.on("line", (line) => {
     }
 
     // LIST returns multiple ITEM lines and ends with LIST_END.
-    if (request.command === "LIST") {
-        if (line.startsWith("ITEM|")) {
-            const parts = line.split("|");
+    // LIST and RECYCLE_LIST return multiple ITEM lines.
+if (
+    request.command === "LIST" ||
+    request.command === "RECYCLE_LIST"
+) {
+    if (line.startsWith("ITEM|")) {
+        const parts = line.split("|");
 
-            request.items.push({
-                name: parts[1],
-                type: Number(parts[2]) === 0 ? "folder" : "file"
-            });
-        } else if (line === "LIST_END") {
-            pendingRequests.shift();
-            request.resolve(request.items);
-        }
-
-        return;
+        request.items.push({
+            name: parts[1],
+            type: Number(parts[2]) === 0 ? "folder" : "file"
+        });
+    } else if (
+        (request.command === "LIST" && line === "LIST_END") ||
+        (request.command === "RECYCLE_LIST" && line === "LIST_END")
+    ) {
+        pendingRequests.shift();
+        request.resolve(request.items);
     }
+
+    return;
+}
 
     // Other commands must end with END.
     if (line.startsWith("PATH|")) {
@@ -214,4 +221,60 @@ app.post("/api/forward", async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`NodeVault API running at http://localhost:${PORT}`);
+});
+
+// Recycle an item
+app.post("/api/delete", async (req, res) => {
+    const { name } = req.body ?? {};
+
+    if (!validName(name)) {
+        return res.status(400).json({ error: "Invalid item name." });
+    }
+
+    try {
+        res.json(await sendCommand("DELETE|" + name));
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// List Recycle Bin items
+app.get("/api/recycle-bin", async (req, res) => {
+    try {
+        res.json(await sendCommand("RECYCLE_LIST"));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Restore an item
+app.post("/api/restore", async (req, res) => {
+    const { name } = req.body ?? {};
+
+    if (!validName(name)) {
+        return res.status(400).json({ error: "Invalid item name." });
+    }
+
+    try {
+        res.json(await sendCommand("RESTORE|" + name));
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Permanently delete an item
+app.post("/api/permanent-delete", async (req, res) => {
+    const { name } = req.body ?? {};
+
+    if (!validName(name)) {
+        return res.status(400).json({ error: "Invalid item name." });
+    }
+
+    try {
+        res.json(
+            await sendCommand("PERMANENT_DELETE|" + name)
+        );
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
