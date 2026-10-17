@@ -1,6 +1,6 @@
 
 const API = "http://localhost:3000/api";
-
+const homeButton = document.getElementById("homeButton");
 const recycleBinButton = document.getElementById("recycleBinButton");
 const backButton = document.getElementById("backButton");
 const forwardButton = document.getElementById("forwardButton");
@@ -49,12 +49,20 @@ async function loadRecycleBin() {
 async function refreshCurrentView() {
     if (viewingRecycleBin) {
         const items = await loadRecycleBin();
+
         renderItems(items);
+
         document.getElementById("currentPath").textContent = "Recycle Bin";
+        document.querySelector(".directory-heading h2").textContent =
+            "Recycle Bin";
+
         document.getElementById("itemCount").textContent =
             `${items.length} ${items.length === 1 ? "item" : "items"}`;
     } else {
         await refreshFileSystem();
+
+        document.querySelector(".directory-heading h2").textContent =
+            "All Items";
     }
 }
 
@@ -314,21 +322,33 @@ backButton?.addEventListener("click", () => {
 forwardButton?.addEventListener("click", () => {
     navigateHistory("forward");
 });
-recycleBinButton?.addEventListener("click", async () => {
-    viewingRecycleBin = !viewingRecycleBin;
+function updateSidebar() {
+    homeButton.classList.toggle("active", !viewingRecycleBin);
+    recycleBinButton.classList.toggle("active", viewingRecycleBin);
+    newFolderButton.hidden = viewingRecycleBin;
+    newFileButton.hidden = viewingRecycleBin;
+}
+
+homeButton.addEventListener("click", async () => {
+    viewingRecycleBin = false;
+    updateSidebar();
 
     try {
         await refreshCurrentView();
-
-        recycleBinButton.textContent = viewingRecycleBin
-            ? "⌂ Back to Files"
-            : "🗑️ Recycle Bin";
-
-        statusMessage.textContent = viewingRecycleBin
-            ? "Viewing Recycle Bin."
-            : "Ready to explore.";
+        statusMessage.textContent = "Ready to explore.";
     } catch (error) {
-        viewingRecycleBin = !viewingRecycleBin;
+        statusMessage.textContent = `Error: ${error.message}`;
+    }
+});
+
+recycleBinButton.addEventListener("click", async () => {
+    viewingRecycleBin = true;
+    updateSidebar();
+
+    try {
+        await refreshCurrentView();
+        statusMessage.textContent = "Viewing Recycle Bin.";
+    } catch (error) {
         statusMessage.textContent = `Error: ${error.message}`;
     }
 });

@@ -577,3 +577,7 @@ input:focus-visible {
     font-size: 12px;
     padding: 6px 9px;
 }
+
+[hidden] {
+    display: none !important;
+}
