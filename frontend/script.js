@@ -1,5 +1,6 @@
 
 const API = "http://localhost:3000/api";
+const dialogError = document.getElementById("dialogError");
 const homeButton = document.getElementById("homeButton");
 const recycleBinButton = document.getElementById("recycleBinButton");
 const backButton = document.getElementById("backButton");
@@ -295,8 +296,10 @@ createForm?.addEventListener("submit", async (event) => {
         statusMessage.textContent =
             `${selectedItemType === "folder" ? "Folder" : "File"} created: ${name}`;
     } catch (error) {
-        statusMessage.textContent = `Error: ${error.message}`;
-    }
+    dialogError.textContent = error.message;
+    dialogError.hidden = false;
+    itemName.focus();
+}
 });
 
 // Back and Forward navigation

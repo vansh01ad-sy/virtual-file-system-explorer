@@ -581,3 +581,12 @@ input:focus-visible {
 [hidden] {
     display: none !important;
 }
+.dialog-error {
+    color: #dc2626;
+    font-size: 13px;
+    margin: 8px 0 0;
+}
+
+.dialog-error[hidden] {
+    display: none;
+}
