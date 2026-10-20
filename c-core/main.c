@@ -112,6 +112,10 @@ Node *findChild(Node *parent, const char *name)
 
     return NULL;
 }
+int nameExists(Node *parent, const char *name)
+{
+    return findChild(parent, name) != NULL;
+}
 
 int detachChild(Node *parent, Node *target)
 {
@@ -140,20 +144,33 @@ int detachChild(Node *parent, Node *target)
     return 0;
 }
 
+int isInsideSubtree(Node *folder, Node *candidate)
+{
+    Node *current = candidate;
+
+    while (current != NULL)
+    {
+        if (current == folder)
+            return 1;
+
+        current = current->parent;
+    }
+
+    return 0;
+}
 int recycleNode(RecycleEntry **recycleBin,
                 Node *parent, Node *target)
 {
     if (target == NULL || target == parent)
         return 0;
 
-    /* Only recycle files and empty folders for now. */
-    if (target->type == FOLDER && target->firstChild != NULL)
-        return 0;
+
+    
     for (RecycleEntry *r = *recycleBin; r != NULL; r = r->next)
-    {
-    if (r->originalParent == target)
+{
+    if (isInsideSubtree(target, r->originalParent))
         return 0;
-    }
+}
     RecycleEntry *entry = malloc(sizeof(RecycleEntry));
 
     if (entry == NULL)
@@ -333,8 +350,14 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
     {
         printf("ERROR|Folder name required\n");
     }
+    else if (nameExists(currentFolder, name))
+{
+    printf("ERROR|An item with this name already exists\n");
+    printf("END\n");
+}
     else
-    {
+    {   
+        
         Node *folder = createNode(name, FOLDER);
 
         if (folder == NULL)
@@ -361,6 +384,11 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
                 printf("ERROR|File name required\n");
                 printf("END\n");
             }
+            else if (nameExists(currentFolder, name))
+{
+            printf("ERROR|An item with this name already exists\n");
+        printf("END\n");
+        }
             else
             {
                 Node *file = createNode(name, FILE_TYPE);
@@ -454,8 +482,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
                 printf("ERROR|Item name required\n");
             else if (target == NULL)
                 printf("ERROR|Item not found\n");
-            else if (target->type == FOLDER && target->firstChild != NULL)
-                printf("ERROR|Only empty folders can be recycled\n");
+            
             else if (recycleNode(&recycleBin, currentFolder, target))
                 printf("OK|Item recycled|%s\n", name);
             else
