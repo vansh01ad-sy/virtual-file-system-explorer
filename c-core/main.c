@@ -73,7 +73,7 @@ void printPath(Node *currentFolder)
 Node *createNode(char *name , int type){
     Node *newNode = (Node*)malloc(sizeof(Node));
     if (newNode == NULL){
-        printf("Memory allocation failed\n");
+    
         return NULL; 
     }
     strcpy(newNode->name, name);
@@ -116,7 +116,30 @@ int nameExists(Node *parent, const char *name)
 {
     return findChild(parent, name) != NULL;
 }
+int renameNode(Node *parent, const char *oldName,
+               const char *newName)
+{
+    if (newName == NULL || newName[0] == '\0')
+        return 0;
 
+    if (strlen(newName) >= sizeof(((Node *)0)->name))
+        return 0;
+
+    Node *target = findChild(parent, oldName);
+
+    if (target == NULL)
+        return 0;
+
+    if (strcmp(oldName, newName) == 0)
+        return 1;
+
+    if (nameExists(parent, newName))
+        return 0;
+
+    strcpy(target->name, newName);
+
+    return 1;
+}
 int detachChild(Node *parent, Node *target)
 {
     Node *current = parent->firstChild;
@@ -292,7 +315,7 @@ int permanentlyDelete(RecycleEntry **recycleBin,
 int main(){
     Node *root = createNode("/", FOLDER);
     if(root == NULL){
-        printf("Unable to create root folder!");
+        fprintf(stderr, "Unable to create root folder!\n");
         return 1;
     }
     Node *currentFolder = root;   //indicate in which folder we are 
@@ -349,6 +372,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
     if (*name == '\0')
     {
         printf("ERROR|Folder name required\n");
+          printf("END\n");
     }
     else if (nameExists(currentFolder, name))
 {
@@ -396,6 +420,7 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
                 if (file == NULL)
                 {
                     printf("ERROR|Memory allocation failed\n");
+                      printf("END\n");
                 }
                 else
                 {
@@ -535,10 +560,44 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
             printf("END\n");
             fflush(stdout);
         }
+        else if (strncmp(command, "RENAME|", 7) == 0)
+{
+    char *arguments = command + 7;
+    char *separator = strchr(arguments, '|');
 
+    if (separator == NULL)
+    {
+        printf("ERROR|Expected old name and new name\n");
+    }
+    else
+    {
+        *separator = '\0';
+
+        char *oldName = arguments;
+        char *newName = separator + 1;
+
+        if (*oldName == '\0' || *newName == '\0')
+        {
+            printf("ERROR|Both names are required\n");
+        }
+        else if (renameNode(currentFolder, oldName, newName))
+        {
+            printf("OK|Item renamed|%s|%s\n",
+                   oldName, newName);
+        }
+        else
+        {
+            printf("ERROR|Rename failed: item not found or name already exists\n");
+        }
+    }
+
+    printf("END\n");
+    fflush(stdout);
+}
         else
         {
             printf("ERROR|Unknown command\n");
+             printf("END\n");
             fflush(stdout);
         }
 
