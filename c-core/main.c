@@ -2,6 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define CLIPBOARD_NONE 0
+#define CLIPBOARD_COPY 1
+#define CLIPBOARD_MOVE 2
+
 #define FOLDER 0        
 #define FILE_TYPE 1     
 
@@ -81,6 +85,47 @@ Node *createNode(char *name , int type){
     newNode->firstChild = NULL;             //initially set both null cause node has no child or sibling when created ;
     newNode->nextSibling = NULL;
     newNode->parent = NULL;
+
+    return newNode;
+}
+
+// Forward declaration because copyTree uses freeTree.
+void freeTree(Node *node);
+
+// Recursively create an independent copy of a node and its children.
+Node *copyTree(Node *source)
+{
+    if (source == NULL)
+        return NULL;
+
+    // Create a new node with the same name and type.
+    Node *newNode = createNode(source->name, source->type);
+
+    if (newNode == NULL)
+        return NULL;
+
+    Node *child = source->firstChild;
+    Node **nextPosition = &newNode->firstChild;
+
+    // Copy every child recursively.
+    while (child != NULL)
+    {
+        Node *childCopy = copyTree(child);
+
+        if (childCopy == NULL)
+        {
+            // Clean up if allocation fails.
+            freeTree(newNode);
+            return NULL;
+        }
+
+        childCopy->parent = newNode;
+
+        *nextPosition = childCopy;
+        nextPosition = &childCopy->nextSibling;
+
+        child = child->nextSibling;
+    }
 
     return newNode;
 }
@@ -181,6 +226,38 @@ int isInsideSubtree(Node *folder, Node *candidate)
 
     return 0;
 }
+
+void removeDeletedFromHistory(Node *history[],
+                              int *historyCount,
+                              int *historyIndex,
+                              Node *deletedRoot,
+                              Node **currentFolder)
+{
+    int oldIndex = *historyIndex;
+    int writeIndex = 0;
+    int newIndex = 0;
+
+    for (int i = 0; i < *historyCount; i++)
+    {
+        // Skip the deleted folder and all its descendants.
+        if (isInsideSubtree(deletedRoot, history[i]))
+            continue;
+
+        if (i <= oldIndex)
+            newIndex = writeIndex;
+
+        history[writeIndex] = history[i];
+        writeIndex++;
+    }
+
+    *historyCount = writeIndex;
+    *historyIndex = newIndex;
+
+    // Point currentFolder to a valid history entry.
+    *currentFolder = history[newIndex];
+}
+
+
 int recycleNode(RecycleEntry **recycleBin,
                 Node *parent, Node *target)
 {
@@ -285,8 +362,13 @@ void freeTree(Node *node)
 
     free(node);
 }
+
 int permanentlyDelete(RecycleEntry **recycleBin,
-                      const char *name)
+                      const char *name,
+                      Node *history[],
+                      int *historyCount,
+                      int *historyIndex,
+                      Node **currentFolder)
 {
     RecycleEntry *current = *recycleBin;
     RecycleEntry *previous = NULL;
@@ -300,6 +382,15 @@ int permanentlyDelete(RecycleEntry **recycleBin,
             else
                 previous->next = current->next;
 
+            // Clean navigation history BEFORE freeing memory.
+            removeDeletedFromHistory(
+                history,
+                historyCount,
+                historyIndex,
+                current->node,
+                currentFolder
+            );
+
             freeTree(current->node);
             free(current);
 
@@ -312,12 +403,14 @@ int permanentlyDelete(RecycleEntry **recycleBin,
 
     return 0;
 }
+
 int main(){
     Node *root = createNode("/", FOLDER);
     if(root == NULL){
         fprintf(stderr, "Unable to create root folder!\n");
         return 1;
     }
+    
     Node *currentFolder = root;   //indicate in which folder we are 
     int choice ; 
     char name[50];
@@ -330,6 +423,8 @@ int main(){
 
     history[0] = root;
     RecycleEntry *recycleBin = NULL;
+    Node *clipboardNode = NULL;
+    int clipboardMode = CLIPBOARD_NONE;
     
     char command[100];
 
@@ -552,7 +647,13 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
 
             if (*name == '\0')
                 printf("ERROR|Item name required\n");
-            else if (permanentlyDelete(&recycleBin, name))
+            else if (permanentlyDelete(
+             &recycleBin,
+             name,
+             history,
+             &historyCount,
+             &historyIndex,
+             &currentFolder))
                 printf("OK|Item permanently deleted|%s\n", name);
             else
                 printf("ERROR|Item not found in Recycle Bin\n");
@@ -589,6 +690,93 @@ else if (strncmp(command, "CREATE_FOLDER|", 14) == 0)
         {
             printf("ERROR|Rename failed: item not found or name already exists\n");
         }
+    }
+
+    printf("END\n");
+    fflush(stdout);
+}
+
+    else if (strncmp(command, "COPY|", 5) == 0)
+{
+    char *name = command + 5;
+
+    Node *target = findChild(currentFolder, name);
+
+    if (target == NULL)
+    {
+        printf("ERROR|Item not found\n");
+    }
+    else
+    {
+        // Free the previous clipboard snapshot, if any.
+        if (clipboardMode == CLIPBOARD_COPY)
+        {
+            freeTree(clipboardNode);
+        }
+
+        // Create an independent snapshot.
+        clipboardNode = copyTree(target);
+
+        if (clipboardNode == NULL)
+        {
+            clipboardMode = CLIPBOARD_NONE;
+            printf("ERROR|Memory allocation failed\n");
+        }
+        else
+        {
+            clipboardMode = CLIPBOARD_COPY;
+            printf("OK|Copied %s\n", name);
+        }
+    }
+
+    printf("END\n");
+    fflush(stdout);
+}
+else if (strcmp(command, "PASTE") == 0)
+{
+    if (clipboardMode == CLIPBOARD_NONE || clipboardNode == NULL)
+    {
+        printf("ERROR|Clipboard is empty\n");
+    }
+    else if (clipboardMode == CLIPBOARD_COPY)
+    {
+        if (nameExists(currentFolder, clipboardNode->name))
+        {
+            printf("ERROR|An item with this name already exists\n");
+        }
+        else
+        {
+            Node *newNode = copyTree(clipboardNode);
+
+            if (newNode == NULL)
+            {
+                printf("ERROR|Memory allocation failed\n");
+            }
+            else
+            {
+                addChild(currentFolder, newNode);
+                printf("OK|Item pasted successfully\n");
+            }
+        }
+    }
+
+    printf("END\n");
+    fflush(stdout);
+}
+
+    else if (strcmp(command, "CLIPBOARD_STATUS") == 0)
+{
+    if (clipboardMode == CLIPBOARD_COPY && clipboardNode != NULL)
+    {
+        printf("CLIPBOARD|COPY|%s\n", clipboardNode->name);
+    }
+    else if (clipboardMode == CLIPBOARD_MOVE && clipboardNode != NULL)
+    {
+        printf("CLIPBOARD|MOVE|%s\n", clipboardNode->name);
+    }
+    else
+    {
+        printf("CLIPBOARD|NONE|\n");
     }
 
     printf("END\n");
