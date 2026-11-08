@@ -8,6 +8,9 @@ const forwardButton = document.getElementById("forwardButton");
 
 const newFolderButton = document.getElementById("newFolderButton");
 const newFileButton = document.getElementById("newFileButton");
+const pasteButton = document.getElementById("pasteButton");
+const cancelClipboardButton =
+    document.getElementById("cancelClipboardButton");
 
 const createDialog = document.getElementById("createDialog");
 const createForm = document.getElementById("createForm");
@@ -20,9 +23,31 @@ const cancelButton = document.getElementById("cancelButton");
 const fileArea = document.getElementById("fileArea");
 const statusMessage = document.getElementById("statusMessage");
 
+const gridViewButton = document.getElementById("gridViewButton");
+const listViewButton = document.getElementById("listViewButton");
+
 let selectedItemType = "folder";
 let viewingRecycleBin = false;
+let clipboardState = {
+    mode: "NONE",
+    name: null
+};
 // Send a request to the Node.js API
+function setView(view) {
+    const isGrid = view === "grid";
+
+    fileArea.classList.toggle("grid-view", isGrid);
+    fileArea.classList.toggle("list-view", !isGrid);
+
+    gridViewButton.classList.toggle("active", isGrid);
+    listViewButton.classList.toggle("active", !isGrid);
+
+    gridViewButton.setAttribute("aria-pressed", String(isGrid));
+    listViewButton.setAttribute("aria-pressed", String(!isGrid));
+}
+
+gridViewButton.addEventListener("click", () => setView("grid"));
+listViewButton.addEventListener("click", () => setView("list"));
 async function apiRequest(endpoint, options = {}) {
     const response = await fetch(`${API}${endpoint}`, options);
     const data = await response.json();
@@ -46,6 +71,24 @@ async function loadItems() {
 }
 async function loadRecycleBin() {
     return await apiRequest("/recycle-bin");
+}
+// Get clipboard status from the C core.
+async function updateClipboardUI() {
+    try {
+        const clipboard = await apiRequest("/clipboard");
+        clipboardState = clipboard;
+
+        const hasItem = clipboard.mode !== "NONE";
+
+        pasteButton.hidden = !hasItem;
+        cancelClipboardButton.hidden = !hasItem;
+
+        if (hasItem) {
+            pasteButton.textContent = `Paste ${clipboard.name}`;
+        }
+    } catch (error) {
+        console.error("Clipboard status error:", error);
+    }
 }
 async function refreshCurrentView() {
     if (viewingRecycleBin) {
@@ -85,6 +128,18 @@ function renderItems(items) {
     items.forEach((item) => {
         const itemElement = document.createElement("div");
         itemElement.className = "file-item";
+        if (
+    clipboardState.mode === "MOVE" &&
+    clipboardState.name === item.name
+) {
+    itemElement.classList.add("cut-item");
+}
+        if (
+    clipboardState.mode === "MOVE" &&
+    clipboardState.name === item.name
+) {
+    itemElement.classList.add("cut-item");
+}
 
         const icon = document.createElement("span");
 icon.className = `file-item-icon ${item.type}`;
@@ -120,16 +175,56 @@ if (item.type === "folder") {
         itemElement.append(icon, name);
 
         const actions = document.createElement("div");
-        actions.className = "file-item-actions";
+actions.className = "file-item-actions";
 
-        const actionButton = (label, handler) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "button button-secondary";
-            button.textContent = label;
-            button.addEventListener("click", handler);
-            actions.appendChild(button);
-        };
+const menuButton = document.createElement("button");
+menuButton.type = "button";
+menuButton.className = "more-actions-button";
+menuButton.textContent = "⋮";
+menuButton.setAttribute("aria-label", `Actions for ${item.name}`);
+menuButton.setAttribute("aria-expanded", "false");
+
+const menu = document.createElement("div");
+menu.className = "item-actions-menu";
+menu.hidden = true;
+
+menuButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+
+    const willOpen = menu.hidden;
+
+    // Close every other open menu
+    document.querySelectorAll(".item-actions-menu").forEach((otherMenu) => {
+        otherMenu.hidden = true;
+
+        const otherButton = otherMenu.previousElementSibling;
+        if (otherButton) {
+            otherButton.setAttribute("aria-expanded", "false");
+        }
+    });
+
+    // Toggle the menu we clicked
+    menu.hidden = !willOpen;
+    menuButton.setAttribute("aria-expanded", String(willOpen));
+});
+
+const actionButton = (label, handler) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "menu-action";
+    button.textContent = label;
+
+    button.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        menu.hidden = true;
+        menuButton.setAttribute("aria-expanded", "false");
+        await handler();
+    });
+
+    menu.appendChild(button);
+};
+
+actions.append(menuButton, menu);
 
         if (viewingRecycleBin) {
             actionButton("Restore", async () => {
@@ -146,7 +241,7 @@ if (item.type === "folder") {
                     statusMessage.textContent = `Error: ${error.message}`;
                 }
             });
-
+            
             actionButton("Delete Permanently", async () => {
                 if (!confirm(`Permanently delete "${item.name}"? This cannot be undone.`)) {
                     return;
@@ -183,7 +278,84 @@ if (item.type === "folder") {
                     }
                 });
             }
+            actionButton("Copy", async () => {
+    try {
+        await apiRequest("/copy", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name: item.name })
+        });
 
+        await updateClipboardUI();
+        statusMessage.textContent = `${item.name} copied.`;
+    } catch (error) {
+        statusMessage.textContent = error.message;
+    }
+});
+
+actionButton("Cut", async () => {
+    try {
+        await apiRequest("/cut", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name: item.name })
+        });
+
+        await updateClipboardUI();
+await refreshCurrentView();
+
+statusMessage.textContent = `${item.name} ready to move.`;
+    } catch (error) {
+        statusMessage.textContent = error.message;
+    }
+});
+            actionButton("Rename", async () => {
+            const newName = prompt(
+                "Enter the new name:",
+                item.name
+            );
+
+            if (newName === null) return;
+
+            const trimmedName = newName.trim();
+
+            if (!trimmedName) {
+                statusMessage.textContent =
+                    "Name cannot be empty.";
+                return;
+            }
+
+            if (trimmedName === item.name) {
+                statusMessage.textContent =
+                    "Name unchanged.";
+                return;
+            }
+
+            try {
+                await apiRequest("/rename", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        oldName: item.name,
+                        newName: trimmedName
+                    })
+                });
+
+                await refreshCurrentView();
+
+                statusMessage.textContent =
+                    `Renamed "${item.name}" to "${trimmedName}".`;
+            } catch (error) {
+                statusMessage.textContent =
+                    `Error: ${error.message}`;
+            }
+        });
             actionButton("Delete", async () => {
                 if (!confirm(`Move "${item.name}" to the Recycle Bin?`)) {
                     return;
@@ -255,7 +427,38 @@ newFolderButton?.addEventListener("click", () => {
 newFileButton?.addEventListener("click", () => {
     openCreateDialog("file");
 });
+// Paste the clipboard item into the current folder
+pasteButton.addEventListener("click", async () => {
+    try {
+        await apiRequest("/paste", {
+            method: "POST"
+        });
 
+       await updateClipboardUI();
+await refreshCurrentView();
+
+        statusMessage.textContent = "Item pasted successfully.";
+    } catch (error) {
+        statusMessage.textContent = error.message;
+    }
+});
+
+
+// Cancel the current clipboard operation
+cancelClipboardButton.addEventListener("click", async () => {
+    try {
+        await apiRequest("/cancel-clipboard", {
+            method: "POST"
+        });
+
+        await updateClipboardUI();
+await refreshCurrentView();
+
+        statusMessage.textContent = "Clipboard operation cancelled.";
+    } catch (error) {
+        statusMessage.textContent = error.message;
+    }
+});
 // Close dialog buttons
 closeDialogButton?.addEventListener("click", () => {
     createDialog.close();
@@ -366,3 +569,18 @@ refreshFileSystem()
         statusMessage.textContent =
             `Connection failed: ${error.message}`;
     });
+
+document.addEventListener("click", (event) => {
+    if (event.target.closest(".file-item-actions")) {
+        return;
+    }
+
+    document.querySelectorAll(".item-actions-menu").forEach((menu) => {
+        menu.hidden = true;
+
+        const menuButton = menu.previousElementSibling;
+        if (menuButton) {
+            menuButton.setAttribute("aria-expanded", "false");
+        }
+    });
+});

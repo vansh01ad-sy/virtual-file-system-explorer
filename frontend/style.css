@@ -551,7 +551,7 @@ input:focus-visible {
 
 /* Bottom status bar */
 #statusMessage {
-    font-size: 12px;
+    font-size: 14px;
     color: #667085;
     font-weight: 400;
     padding: 6px 14px;
@@ -589,4 +589,273 @@ input:focus-visible {
 
 .dialog-error[hidden] {
     display: none;
+}
+
+/* Keep toolbar actions and view toggle at opposite ends */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid #e1e7f0;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.view-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 36px;
+    padding: 8px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.view-button svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.view-button.active {
+    background: #edf1ff;
+    color: #4361ee;
+}
+
+.view-button:hover {
+    background: #f0f3fa;
+}
+
+.view-button.active:hover {
+    background: #e5eaff;
+}
+/* Hide actions in Grid View */
+.grid-view .file-item-actions {
+    display: none;
+}
+
+/* List view layout */
+.list-view {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+/* Each item occupies half the available width */
+.list-view .file-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    min-height: 30px;
+    height: 48px;
+    padding: 6px 16px;
+    gap: 14px;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+/* Keep the icon at a consistent size */
+.list-view .file-item-icon {
+    flex: 0 0 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Keep the name right beside the icon */
+.list-view .file-item-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+/* Keep the three-dot menu at the row's right edge */
+.list-view .file-item-actions {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.list-view .file-item-icon svg {
+    width: 38px;
+    height: 38px;
+}
+
+.more-actions-button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #475569;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.more-actions-button:hover {
+    background: #edf1ff;
+}
+
+.list-view .file-item-actions {
+    position: relative;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.list-view .item-actions-menu {
+    position: absolute;
+       top: calc(50% + 45px);
+    right: 40px;
+    transform: translateY(-50%);
+    z-index: 100;
+    min-width: 190px;
+    padding: 5px;
+    border: 1px solid #e1e7f0;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(20, 35, 70, 0.14);
+}
+
+.item-actions-menu[hidden] {
+    display: none !important;
+}
+
+
+.menu-action {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #24324a;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu-action:hover {
+    background: #edf1ff;
+}
+
+/* Refined breadcrumb navigation */
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.breadcrumb-home {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.breadcrumb-home svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke:rgb(42, 39, 39);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.breadcrumb-divider {
+    color: #a0aabd;
+    font-size: 17px;
+    font-weight: 400;
+}
+
+#currentPath {
+    min-width: 0;
+    overflow: hidden;
+    color: #485466;
+    font-size: 14px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Sidebar navigation icons */
+.nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.nav-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.breadcrumbs {
+    gap: 6px;
+}
+
+.breadcrumb-divider {
+    margin: 0 3px;
+}
+
+#currentPath {
+    padding-left: 7px;
+}
+#currentPath {
+    letter-spacing: 0.5px;
+    word-spacing: 5px;
+}
+/* Correct vertical scrolling in List View */
+#fileArea.list-view {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+/* Keep list rows within the available width */
+#fileArea.list-view .file-item {
+    flex-shrink: 0;
+    max-width: 100%;
+}
+
+/* Visual indicator for cut items */
+.file-item.cut-item {
+    opacity: 0.45;
+    transition: opacity 0.2s ease;
 }

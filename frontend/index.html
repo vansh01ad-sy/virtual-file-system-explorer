@@ -21,7 +21,13 @@
             <p class="section-label">WORKSPACE</p>
 
             <button class="nav-item active" id="homeButton">
-                <span class="nav-icon">⌂</span>
+                <span class="nav-icon">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 10.5 12 3l9 7.5"/>
+        <path d="M5.5 9.5V21h13V9.5"/>
+        <path d="M9.5 21v-7h5v7"/>
+    </svg>
+</span>
                 <span>Home</span>
             </button>
             
@@ -52,9 +58,16 @@
                     </button>
                 </div>
                 <div class="breadcrumbs">
-                    <span class="breadcrumb-home">⌂</span>
-                    <span class="breadcrumb-divider">/</span>
-                    <span id="currentPath">Home</span>
+                    <span class="breadcrumb-home" aria-label="Home">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 10.5 12 3l9 7.5"/>
+                        <path d="M5.5 9.5V21h13V9.5"/>
+                        <path d="M9.5 21v-7h5v7"/>
+                    </svg>
+                </span>
+
+                <span class="breadcrumb-divider">/</span>
+                <span id="currentPath">Home</span>
                 </div>
             </header>
 
@@ -63,21 +76,60 @@
                 <!-- Actions -->
                 <section class="toolbar">
                     <div class="toolbar-actions">
-                        <button class="button button-primary" id="newFolderButton">
-                            <span class="button-symbol">+</span>
-                            New Folder
-                        </button>
+    <button class="button button-primary" id="newFolderButton">
+        <span class="button-symbol">+</span>
+        New Folder
+    </button>
 
-                        <button class="button button-secondary" id="newFileButton">
-                            <span class="button-symbol">+</span>
-                            New File
-                        </button>
-                    </div>
+    <button class="button button-secondary" id="newFileButton">
+        <span class="button-symbol">+</span>
+        New File
+    </button>
+
+    <button class="button button-secondary" id="pasteButton" hidden>
+        Paste
+    </button>
+
+    <button class="button button-secondary" id="cancelClipboardButton" hidden>
+        Cancel
+    </button>
+</div>
+                    <div class="view-toggle">
+    <button
+        id="gridViewButton"
+        class="view-button active"
+        type="button"
+        title="Grid View"
+        aria-label="Grid View"
+        aria-pressed="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+    </button>
+
+    <button
+        id="listViewButton"
+        class="view-button"
+        type="button"
+        title="List View"
+        aria-label="List View"
+        aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 6h13M8 12h13M8 18h13"/>
+            <circle cx="3.5" cy="6" r="0.8"/>
+            <circle cx="3.5" cy="12" r="0.8"/>
+            <circle cx="3.5" cy="18" r="0.8"/>
+        </svg>
+    </button>
+</div>
                     
                     
                 </section>
 
-                <!-- Directory heading -->
+                <!-- Diiiiiiirectory heading -->
                 <section class="directory-heading">
                     <div>
                         <h2>All Items</h2>
@@ -102,7 +154,7 @@
         </main>
     </div>
 
-    <!-- Create dialog -->
+    <!-- Create dialogg-->
     <dialog id="createDialog" class="create-dialog">
         <form id="createForm">
             <div class="dialog-heading">
