@@ -69,8 +69,18 @@ if (
 
     // Other commands must end with END.
     if (line.startsWith("PATH|")) {
-        request.result = { path: line.slice(5) };
-    } else if (line.startsWith("OK|")) {
+    request.result = { path: line.slice(5) };
+
+} else if (line.startsWith("CLIPBOARD|")) {
+    const parts = line.split("|");
+
+    request.result = {
+        mode: parts[1],
+        name: parts[2] || null
+    };
+
+} 
+    else if (line.startsWith("OK|")) {
         request.result = { message: line };
     } else if (line.startsWith("ERROR|")) {
         request.error = line.slice(6);
@@ -155,6 +165,16 @@ app.get("/api/items", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// Clipboard status
+app.get("/api/clipboard", async (req, res) => {
+    try {
+        res.json(await sendCommand("CLIPBOARD_STATUS"));
+    } catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
 
 // Create folder
 app.post("/api/folders", async (req, res) => {
@@ -218,6 +238,65 @@ app.post("/api/forward", async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 });
+// Copy an item
+app.post("/api/copy", async (req, res) => {
+    const { name } = req.body ?? {};
+
+    if (!validName(name)) {
+        return res.status(400).json({
+            error: "Invalid item name."
+        });
+    }
+
+    try {
+        res.json(await sendCommand("COPY|" + name));
+    } catch (error) {
+        res.status(400).json({
+            error: error.message
+        });
+    }
+});
+
+// Cut an item
+app.post("/api/cut", async (req, res) => {
+    const { name } = req.body ?? {};
+
+    if (!validName(name)) {
+        return res.status(400).json({
+            error: "Invalid item name."
+        });
+    }
+
+    try {
+        res.json(await sendCommand("CUT|" + name));
+    } catch (error) {
+        res.status(400).json({
+            error: error.message
+        });
+    }
+});
+
+// Paste clipboard item
+app.post("/api/paste", async (req, res) => {
+    try {
+        res.json(await sendCommand("PASTE"));
+    } catch (error) {
+        res.status(400).json({
+            error: error.message
+        });
+    }
+});
+
+// Cancel clipboard
+app.post("/api/cancel-clipboard", async (req, res) => {
+    try {
+        res.json(await sendCommand("CANCEL_CLIPBOARD"));
+    } catch (error) {
+        res.status(400).json({
+            error: error.message
+        });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`NodeVault API running at http://localhost:${PORT}`);
@@ -237,7 +316,30 @@ app.post("/api/delete", async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 });
+app.post("/api/rename", async (req, res) => {
+    const { oldName, newName } = req.body ?? {};
 
+    if (
+        !validName(oldName) ||
+        !validName(newName)
+    ) {
+        return res.status(400).json({
+            error: "Both names must be valid and under 50 characters."
+        });
+    }
+
+    try {
+        const result = await sendCommand(
+            `RENAME|${oldName}|${newName}`
+        );
+
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({
+            error: error.message
+        });
+    }
+});
 // List Recycle Bin items
 app.get("/api/recycle-bin", async (req, res) => {
     try {
